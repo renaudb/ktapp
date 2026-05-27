@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# rules
+rules/*.pdf
+rules/*.json
+rules/teams/*.pdf
+rules/teams/*.json
