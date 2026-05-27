@@ -2,9 +2,13 @@ KT Rules App
 
 ## Getting Started
 
-Run the `import-weapon-rules` skill with the KT core rules as input.
+Add core rules:
 
-Add teams by running the `import-team-rules` skill with the team rules as input.
+    /skills import-weapon-rules CORE_RULES_PATH
+
+Add team rules:
+
+    /skills import-team-rules TEAM_RULES_PATH
 
 ## Build
 
