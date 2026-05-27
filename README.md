@@ -1,4 +1,6 @@
-KT Rules App
+# KT Rules App
+
+Simple app for interactive KT rules.
 
 ## Getting Started
 
