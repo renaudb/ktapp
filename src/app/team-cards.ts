@@ -1,5 +1,5 @@
-import teamRules from "../../rules/teams/celestian-insidiants.json";
-import weaponRuleData from "../../rules/weapon-rules.json";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { CardItem, RuleCard } from "./cards";
 
 type TeamWeapon = {
@@ -67,8 +67,38 @@ export type KillTeamOption = {
   weaponRules: Record<string, string>;
 };
 
-const team = teamRules as TeamRules;
-const weaponRuleSource = weaponRuleData as WeaponRuleData;
+const teamRuleSources = [
+  {
+    id: "celestian-insidiants",
+    fileName: "celestian-insidiants.json",
+  },
+  {
+    id: "nemesis-claw",
+    fileName: "nemesis-claw.json",
+  },
+];
+
+function readTeamRules(fileName: string): TeamRules | null {
+  const filePath = join(process.cwd(), "rules", "teams", fileName);
+
+  if (!existsSync(filePath)) {
+    return null;
+  }
+
+  return JSON.parse(readFileSync(filePath, "utf8")) as TeamRules;
+}
+
+function readWeaponRules(): WeaponRuleData {
+  const filePath = join(process.cwd(), "rules", "weapon-rules.json");
+
+  if (!existsSync(filePath)) {
+    return { weaponRules: {} };
+  }
+
+  return JSON.parse(readFileSync(filePath, "utf8")) as WeaponRuleData;
+}
+
+const weaponRuleSource = readWeaponRules();
 
 function weaponToItem(weapon: TeamWeapon): CardItem {
   return {
@@ -151,42 +181,65 @@ function ruleToCard(rule: NamedRule, category: string): RuleCard {
   };
 }
 
-const sectionSources: CardSectionGroup[] = [
-  {
-    label: "Datacards",
-    count: team.datacards.length,
-    cards: team.datacards.map(datacardToCard),
-  },
-  {
-    label: "Operative Selection",
-    count: 1,
-    cards: [operativeSelectionToCard(team.operativeSelection)],
-  },
-  {
-    label: "Faction Rules",
-    count: team.factionRules.length,
-    cards: team.factionRules.map((rule) => ruleToCard(rule, "Faction Rules")),
-  },
-  {
-    label: "Strategy Ploys",
-    count: team.strategyPloys.length,
-    cards: team.strategyPloys.map((rule) => ruleToCard(rule, "Strategy Ploys")),
-  },
-  {
-    label: "Firefight Ploys",
-    count: team.firefightPloys.length,
-    cards: team.firefightPloys.map((rule) =>
-      ruleToCard(rule, "Firefight Ploys"),
-    ),
-  },
-  {
-    label: "Faction Equipment",
-    count: team.factionEquipment.length,
-    cards: team.factionEquipment.map((rule) =>
-      ruleToCard(rule, "Faction Equipment"),
-    ),
-  },
-];
+function buildTeamSections(team: TeamRules): CardSectionGroup[] {
+  return [
+    {
+      label: "Datacards",
+      count: team.datacards.length,
+      cards: team.datacards.map(datacardToCard),
+    },
+    {
+      label: "Operative Selection",
+      count: 1,
+      cards: [operativeSelectionToCard(team.operativeSelection)],
+    },
+    {
+      label: "Faction Rules",
+      count: team.factionRules.length,
+      cards: team.factionRules.map((rule) => ruleToCard(rule, "Faction Rules")),
+    },
+    {
+      label: "Strategy Ploys",
+      count: team.strategyPloys.length,
+      cards: team.strategyPloys.map((rule) =>
+        ruleToCard(rule, "Strategy Ploys"),
+      ),
+    },
+    {
+      label: "Firefight Ploys",
+      count: team.firefightPloys.length,
+      cards: team.firefightPloys.map((rule) =>
+        ruleToCard(rule, "Firefight Ploys"),
+      ),
+    },
+    {
+      label: "Faction Equipment",
+      count: team.factionEquipment.length,
+      cards: team.factionEquipment.map((rule) =>
+        ruleToCard(rule, "Faction Equipment"),
+      ),
+    },
+  ];
+}
+
+export const killTeams: KillTeamOption[] = teamRuleSources.flatMap((source) => {
+  const team = readTeamRules(source.fileName);
+
+  if (!team) {
+    return [];
+  }
+
+  return [
+    {
+      id: source.id,
+      name: team.name,
+      sections: buildTeamSections(team),
+      weaponRules: weaponRuleSource.weaponRules,
+    },
+  ];
+});
+
+const sectionSources = killTeams[0]?.sections ?? [];
 
 export const cards = sectionSources.flatMap((section) => section.cards);
 
@@ -196,14 +249,5 @@ export const tableOfContents: TableOfContentsItem[] = sectionSources.map(
   ({ label, count }) => ({ label, count }),
 );
 
-export const teamName = team.name;
+export const teamName = killTeams[0]?.name ?? "Kill Team";
 export const weaponRules = weaponRuleSource.weaponRules;
-
-export const killTeams: KillTeamOption[] = [
-  {
-    id: "celestian-insidiants",
-    name: team.name,
-    sections: sectionSources,
-    weaponRules: weaponRuleSource.weaponRules,
-  },
-];
