@@ -5,12 +5,10 @@ export type ItemStats = {
   WR: string;
 };
 
-export type CardItem =
-  | string
-  | {
-      name: string;
-      stats: ItemStats;
-    };
+export type CardWeapon = {
+  name: string;
+  stats: ItemStats;
+};
 
 export type CardAction = {
   name: string;
@@ -18,16 +16,68 @@ export type CardAction = {
   rule: string;
 };
 
-export type CardSection = {
-  heading: string;
-  body?: string;
-  items?: CardItem[];
-  actions?: CardAction[];
+export type CardSpecialRule = {
+  name: string;
+  rule: string;
 };
 
-export type RuleCard = {
+export type DatacardStats = {
+  APL: string;
+  Move: string;
+  Save: string;
+  Wounds: string;
+};
+
+type BaseCard = {
   title: string;
   category: string;
-  stats?: Record<string, string>;
-  sections: CardSection[];
 };
+
+export type DatacardCard = BaseCard & {
+  type: "datacard";
+  category: "Datacards";
+  stats: DatacardStats;
+  weapons: CardWeapon[];
+  specialRules: CardSpecialRule[];
+  specialActions: CardAction[];
+  keywords: string[];
+};
+
+export type OperativeSelectionCard = BaseCard & {
+  type: "operative-selection";
+  category: "Operative Selection";
+  archetypes: string[];
+  rule: string;
+};
+
+export type FactionRuleCard = BaseCard & {
+  type: "faction-rule";
+  category: "Faction Rules";
+  rule: string;
+};
+
+export type StrategyPloyCard = BaseCard & {
+  type: "strategy-ploy";
+  category: "Strategy Ploys";
+  rule: string;
+};
+
+export type FirefightPloyCard = BaseCard & {
+  type: "firefight-ploy";
+  category: "Firefight Ploys";
+  rule: string;
+};
+
+export type FactionEquipmentCard = BaseCard & {
+  type: "faction-equipment";
+  category: "Faction Equipment";
+  rule: string;
+};
+
+export type RuleCard =
+  | DatacardCard
+  | OperativeSelectionCard
+  | FactionRuleCard
+  | StrategyPloyCard
+  | FirefightPloyCard
+  | FactionEquipmentCard;

@@ -1,6 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { CardItem, RuleCard } from "./cards";
+import type {
+  CardWeapon,
+  DatacardCard,
+  FactionEquipmentCard,
+  FactionRuleCard,
+  FirefightPloyCard,
+  OperativeSelectionCard,
+  RuleCard,
+  StrategyPloyCard,
+} from "./cards";
 
 type TeamWeapon = {
   NAME: string;
@@ -100,7 +109,7 @@ function readWeaponRules(): WeaponRuleData {
 
 const weaponRuleSource = readWeaponRules();
 
-function weaponToItem(weapon: TeamWeapon): CardItem {
+function weaponToCardWeapon(weapon: TeamWeapon): CardWeapon {
   return {
     name: weapon.NAME,
     stats: {
@@ -112,8 +121,9 @@ function weaponToItem(weapon: TeamWeapon): CardItem {
   };
 }
 
-function datacardToCard(operative: Operative): RuleCard {
+function datacardToCard(operative: Operative): DatacardCard {
   return {
+    type: "datacard",
     title: operative.name,
     category: "Datacards",
     stats: {
@@ -122,63 +132,56 @@ function datacardToCard(operative: Operative): RuleCard {
       Save: operative.stats.SAVE,
       Wounds: operative.stats.WOUNDS,
     },
-    sections: [
-      {
-        heading: "Weapons",
-        items: operative.weapons.map(weaponToItem),
-      },
-      ...operative.specialRules.map((rule) => ({
-        heading: rule.name,
-        body: rule.rule ?? rule.text ?? "",
-      })),
-      ...(operative.specialActions.length > 0
-        ? [
-            {
-              heading: "Special Actions",
-              actions: operative.specialActions.map((action) => ({
-                name: action.name,
-                ap: action.AP,
-                rule: action.rule ?? action.text ?? "",
-              })),
-            },
-          ]
-        : []),
-      {
-        heading: "Keywords",
-        items: operative.keywords,
-      },
-    ],
+    weapons: operative.weapons.map(weaponToCardWeapon),
+    specialRules: operative.specialRules.map((rule) => ({
+      name: rule.name,
+      rule: rule.rule ?? rule.text ?? "",
+    })),
+    specialActions: operative.specialActions.map((action) => ({
+      name: action.name,
+      ap: action.AP,
+      rule: action.rule ?? action.text ?? "",
+    })),
+    keywords: operative.keywords,
   };
 }
 
-function operativeSelectionToCard(selection: OperativeSelection): RuleCard {
+function operativeSelectionToCard(
+  selection: OperativeSelection,
+): OperativeSelectionCard {
   return {
+    type: "operative-selection",
     title: "Operative Selection",
     category: "Operative Selection",
-    sections: [
-      {
-        heading: "Archetypes",
-        items: selection.archetypes,
-      },
-      {
-        heading: "Selection Rule",
-        body: selection.rule,
-      },
-    ],
+    archetypes: selection.archetypes,
+    rule: selection.rule,
   };
 }
 
-function ruleToCard(rule: NamedRule, category: string): RuleCard {
+type RuleCardTypeByCategory = {
+  "Faction Rules": FactionRuleCard;
+  "Strategy Ploys": StrategyPloyCard;
+  "Firefight Ploys": FirefightPloyCard;
+  "Faction Equipment": FactionEquipmentCard;
+};
+
+const cardTypesByCategory = {
+  "Faction Rules": "faction-rule",
+  "Strategy Ploys": "strategy-ploy",
+  "Firefight Ploys": "firefight-ploy",
+  "Faction Equipment": "faction-equipment",
+} as const;
+
+function ruleToCard<Category extends keyof RuleCardTypeByCategory>(
+  rule: NamedRule,
+  category: Category,
+): RuleCardTypeByCategory[Category] {
   return {
+    type: cardTypesByCategory[category],
     title: rule.name,
     category,
-    sections: [
-      {
-        heading: "Rule",
-        body: rule.rule ?? rule.text ?? rule.effect ?? "",
-      },
-    ],
-  };
+    rule: rule.rule ?? rule.text ?? rule.effect ?? "",
+  } as RuleCardTypeByCategory[Category];
 }
 
 function buildTeamSections(team: TeamRules): CardSectionGroup[] {
